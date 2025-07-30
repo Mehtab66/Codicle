@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "./components/ui/Button";
 import { Card, CardContent } from "./components/ui/Card";
 import { Badge } from "./components/ui/Badge";
@@ -16,8 +18,20 @@ import {
   ArrowRight,
   CheckCircle,
 } from "lucide-react";
+
 import Link from "next/link";
+import AuthModal from "./components/auth/AuthModal";
+import { useState } from "react";
+
 export default function LandingPage() {
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
+
+  const openAuthModal = (mode: "signin" | "signup") => {
+    setAuthMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
       {/* Header */}
@@ -34,7 +48,7 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center space-x-8">
             <Link
               href="#features"
-              className={` {inter.className} text-gray-600 hover:text-gray-900 transition-colors`}
+              className={`text-gray-600 hover:text-gray-900 transition-colors`}
             >
               Features
             </Link>
@@ -52,10 +66,17 @@ export default function LandingPage() {
             </Link>
           </nav>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" className="hidden sm:inline-flex">
+            <Button
+              onClick={() => openAuthModal("signin")}
+              variant="ghost"
+              className="hidden sm:inline-flex"
+            >
               Sign In
             </Button>
-            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+            <Button
+              onClick={() => openAuthModal("signup")}
+              className="text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
               Get Started
             </Button>
           </div>
@@ -63,7 +84,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 lg:py-32">
+      <section className="py-5 lg:py-10">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
@@ -93,7 +114,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  className=" text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
                   Start Writing Today
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -429,7 +450,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className=" text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 Get Started for Free
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -565,6 +586,11 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authMode}
+      />
     </div>
   );
 }
