@@ -17,24 +17,29 @@ import {
   Globe,
   ArrowRight,
   CheckCircle,
+  LogOut,
 } from "lucide-react";
-
 import Link from "next/link";
 import AuthModal from "./components/auth/AuthModal";
 import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 
 export default function LandingPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
+  const { data: session } = useSession();
 
   const openAuthModal = (mode: "signin" | "signup") => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
 
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100">
-      {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -48,7 +53,7 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center space-x-8">
             <Link
               href="#features"
-              className={`text-gray-600 hover:text-gray-900 transition-colors`}
+              className="text-gray-600 hover:text-gray-900 transition-colors"
             >
               Features
             </Link>
@@ -66,24 +71,41 @@ export default function LandingPage() {
             </Link>
           </nav>
           <div className="flex items-center space-x-4">
-            <Button
-              onClick={() => openAuthModal("signin")}
-              variant="ghost"
-              className="hidden sm:inline-flex"
-            >
-              Sign In
-            </Button>
-            <Button
-              onClick={() => openAuthModal("signup")}
-              className="text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              Get Started
-            </Button>
+            {session ? (
+              <>
+                <span className="text-gray-600">
+                  Welcome, {session.user?.name}
+                </span>
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  className="flex items-center"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={() => openAuthModal("signin")}
+                  variant="ghost"
+                  className="hidden sm:inline-flex"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  onClick={() => openAuthModal("signup")}
+                  className="text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="py-5 lg:py-10">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -114,7 +136,8 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   size="lg"
-                  className=" text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  className="text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  onClick={() => (session ? null : openAuthModal("signup"))}
                 >
                   Start Writing Today
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -185,7 +208,6 @@ export default function LandingPage() {
                 </Card>
               </div>
 
-              {/* Floating elements */}
               <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-20 animate-pulse"></div>
               <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full opacity-10 animate-pulse delay-1000"></div>
             </div>
@@ -193,7 +215,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -297,7 +318,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Community Stats */}
       <section
         id="community"
         className="py-20 bg-gradient-to-r from-purple-600 to-pink-600"
@@ -334,7 +354,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
@@ -435,7 +454,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
@@ -450,7 +468,8 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className=" text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className="text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                onClick={() => (session ? null : openAuthModal("signup"))}
               >
                 Get Started for Free
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -482,7 +501,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
@@ -582,7 +600,7 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Codicle. All rights reserved.</p>
+            <p>&copy; 2025 Codicle. All rights reserved.</p>
           </div>
         </div>
       </footer>
