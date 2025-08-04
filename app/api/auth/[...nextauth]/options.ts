@@ -31,51 +31,41 @@ export const authOptions: NextAuthOptions = {
           await connectDB();
 
           if (credentials.isSignUp === "true") {
-            // Validate name for signup
-            if (!credentials.name || credentials.name.trim() === "") {
-              console.error("Authorize: Missing or empty name for signup", {
-                credentials,
-              });
-              throw new Error("Full name is required for signup");
-            }
-
-            const existingUser = await User.findOne({
-              email: credentials.email,
-            });
-            if (existingUser) {
-              console.error("Authorize: User already exists", {
+            // User creation is handled in /api/auth/verify-otp
+            // Just verify the user exists and password is correct
+            const user = await User.findOne({ email: credentials.email });
+            if (!user || !user.password) {
+              console.error("Authorize: No user found for signup", {
                 email: credentials.email,
               });
-              throw new Error("User already exists");
+              throw new Error(
+                "User not found. Please complete OTP verification."
+              );
             }
 
-            const hashedPassword = await bcrypt.hash(credentials.password, 10);
-            const user = new User({
-              name: credentials.name.trim(),
-              email: credentials.email.trim(),
-              password: hashedPassword,
+            const isValid = await bcrypt.compare(
+              credentials.password,
+              user.password
+            );
+            if (!isValid) {
+              console.error("Authorize: Invalid password", {
+                email: credentials.email,
+              });
+              throw new Error("Invalid password");
+            }
+
+            console.log("Authorize: User authenticated after signup", {
+              id: user._id,
+              email: user.email,
+              name: user.name,
             });
-
-            try {
-              await user.save();
-              console.log("Authorize: User created", {
-                id: user._id,
-                email: user.email,
-                name: user.name,
-              });
-            } catch (saveError) {
-              console.error("Authorize: Failed to save user", {
-                error: saveError,
-              });
-              throw new Error("Failed to create user");
-            }
-
             return {
               id: user._id.toString(),
               name: user.name ?? null,
               email: user.email ?? null,
             };
           } else {
+            // Signin flow
             const user = await User.findOne({ email: credentials.email });
             if (!user || !user.password) {
               console.error("Authorize: No user found", {
@@ -127,7 +117,7 @@ export const authOptions: NextAuthOptions = {
       try {
         if (user) {
           token.id = user.id ?? "";
-            token.name = user.name ?? undefined;
+          token.name = user.name ?? undefined;
           token.email = user.email ?? null;
           console.log("JWT: Token updated with user data", { token, user });
         }

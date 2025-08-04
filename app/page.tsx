@@ -357,9 +357,7 @@ export default function LandingPage() {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4">
-              Testimonials
-            </Badge>
+            <h1 className="mb-4 text-4xl">Testimonials</h1>
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">
               Loved by Developers Worldwide
             </h2>

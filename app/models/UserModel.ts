@@ -9,7 +9,6 @@ export const UserSchema = new Schema(
     bio: String,
     followers: [{ type: Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    githubId: { type: String, unique: true, sparse: true },
   },
   { timestamps: true }
 );
@@ -24,5 +23,4 @@ export type UserType = {
   bio?: string;
   followers: string[];
   following: string[];
-  githubId?: string;
 };
