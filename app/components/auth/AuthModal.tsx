@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: "signin" | "signup";
+  initialMode?: "signin" | "signup" | "forgot";
 }
 
 export default function AuthModal({
@@ -18,7 +18,9 @@ export default function AuthModal({
   onClose,
   initialMode = "signup",
 }: AuthModalProps) {
-  const [mode, setMode] = useState<"signin" | "signup" | "otp">("signup");
+  const [mode, setMode] = useState<"signin" | "signup" | "otp" | "forgot">(
+    initialMode
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,6 +68,26 @@ export default function AuthModal({
         setError("Please enter a valid 6-digit OTP");
         return false;
       }
+    } else if (mode === "signin") {
+      if (
+        !formData.email ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+      ) {
+        setError("Please enter a valid email");
+        return false;
+      }
+      if (!formData.password || formData.password.length < 6) {
+        setError("Password must be at least 6 characters");
+        return false;
+      }
+    } else if (mode === "forgot") {
+      if (
+        !formData.email ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+      ) {
+        setError("Please enter a valid email");
+        return false;
+      }
     }
     return true;
   };
@@ -83,7 +105,7 @@ export default function AuthModal({
     try {
       if (mode === "signup") {
         // Call API to generate and send OTP
-        const response = await fetch("/api/auth/sendOTP", {
+        const response = await fetch("/api/auth/send-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -104,7 +126,7 @@ export default function AuthModal({
         setMode("otp");
       } else if (mode === "otp") {
         // Verify OTP and create user
-        const response = await fetch("/api/auth/VerifyOTP", {
+        const response = await fetch("/api/auth/verify-otp", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -137,7 +159,7 @@ export default function AuthModal({
           onClose();
           router.push("/");
         }
-      } else {
+      } else if (mode === "signin") {
         // Signin mode
         const result = await signIn("credentials", {
           redirect: false,
@@ -152,6 +174,25 @@ export default function AuthModal({
           onClose();
           router.push("/");
         }
+      } else if (mode === "forgot") {
+        // Forgot password: Send reset email
+        const response = await fetch("/api/auth/forgetPassword", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: formData.email }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          setError(result.error || "Failed to send reset email");
+          setIsLoading(false);
+          return;
+        }
+
+        // Show success message and close modal
+        setError(null);
+        alert("Password reset email sent. Please check your inbox.");
+        onClose();
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -185,7 +226,7 @@ export default function AuthModal({
     setError(null);
   };
 
-  const switchMode = (newMode: "signin" | "signup") => {
+  const switchMode = (newMode: "signin" | "signup" | "forgot") => {
     setMode(newMode);
     resetForm();
   };
@@ -266,6 +307,8 @@ export default function AuthModal({
                         ? "Create your account"
                         : mode === "otp"
                         ? "Verify OTP"
+                        : mode === "forgot"
+                        ? "Reset Password"
                         : "Welcome back"}
                     </h2>
                     <p className="text-gray-600 text-sm">
@@ -273,6 +316,8 @@ export default function AuthModal({
                         ? "Join the developer community and start sharing your knowledge"
                         : mode === "otp"
                         ? "Enter the OTP sent to your email"
+                        : mode === "forgot"
+                        ? "Enter your email to receive a password reset link"
                         : "Sign in to your account to continue"}
                     </p>
                   </div>
@@ -305,60 +350,66 @@ export default function AuthModal({
                         </div>
                       )}
 
-                      <div>
-                        <label
-                          htmlFor="email"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Email Address
-                        </label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-                            placeholder="Enter your email"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="password"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Password
-                        </label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            id="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
-                            placeholder="Enter your password"
-                            required
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      {(mode === "signin" ||
+                        mode === "signup" ||
+                        mode === "forgot") && (
+                        <div>
+                          <label
+                            htmlFor="email"
+                            className="block text-sm font-medium text-gray-700 mb-1"
                           >
-                            {showPassword ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
+                            Email Address
+                          </label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="email"
+                              id="email"
+                              name="email"
+                              value={formData.email}
+                              onChange={handleInputChange}
+                              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                              placeholder="Enter your email"
+                              required
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {(mode === "signin" || mode === "signup") && (
+                        <div>
+                          <label
+                            htmlFor="password"
+                            className="block text-sm font-medium text-gray-700 mb-1"
+                          >
+                            Password
+                          </label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              id="password"
+                              name="password"
+                              value={formData.password}
+                              onChange={handleInputChange}
+                              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                              placeholder="Enter your password"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showPassword ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {mode === "signup" && (
                         <div>
@@ -426,9 +477,47 @@ export default function AuthModal({
                     <div className="text-right">
                       <button
                         type="button"
+                        onClick={() => switchMode("forgot")}
                         className="text-sm text-purple-600 hover:text-purple-700 font-medium"
                       >
                         Forgot password?
+                      </button>
+                    </div>
+                  )}
+
+                  {mode === "otp" && (
+                    <div className="text-center mt-4">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setIsLoading(true);
+                          try {
+                            const response = await fetch("/api/auth/send-otp", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                email: formData.email,
+                                name: formData.name,
+                                password: formData.password,
+                              }),
+                            });
+                            const result = await response.json();
+                            if (!response.ok) {
+                              setError(result.error || "Failed to resend OTP");
+                            } else {
+                              setError(null);
+                              alert("OTP resent successfully");
+                            }
+                          } catch (err) {
+                            setError("Failed to resend OTP");
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }}
+                        className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                        disabled={isLoading}
+                      >
+                        Resend OTP
                       </button>
                     </div>
                   )}
@@ -444,6 +533,8 @@ export default function AuthModal({
                       ? "Send OTP"
                       : mode === "otp"
                       ? "Verify OTP"
+                      : mode === "forgot"
+                      ? "Send Reset Link"
                       : "Sign In"}
                   </Button>
 
@@ -461,7 +552,7 @@ export default function AuthModal({
                   )}
                 </form>
 
-                {mode !== "otp" && (
+                {mode !== "otp" && mode !== "forgot" && (
                   <>
                     <div className="relative my-6">
                       <div className="absolute inset-0 flex items-center">
